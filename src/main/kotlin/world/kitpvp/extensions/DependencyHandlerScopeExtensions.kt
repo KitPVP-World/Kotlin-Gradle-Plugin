@@ -23,19 +23,19 @@ fun DependencyHandlerScope.pluginLibraryImplementation(dependencyNotation: Strin
 }
 
 @Suppress("unused")
-        /**
-         * Adds kotlin reflect as plugin library implementation to the project
-         */
+/**
+ * Adds kotlin reflect as plugin library implementation to the project
+ */
 fun DependencyHandlerScope.kotlinReflectPluginLib() {
     pluginLibraryImplementation(kotlin("reflect").toString())
 }
 
 @Suppress("unused")
-        /**
-         * Adds jetbrains exposed framework as plugin library implemetation to the project
-         * @param modules What modules / artifacts of exposed should be used (Without core)
-         * @param exposedVersion the version of exposed
-         */
+/**
+ * Adds jetbrains exposed framework as plugin library implemetation to the project
+ * @param modules What modules / artifacts of exposed should be used (Without core)
+ * @param exposedVersion the version of exposed
+ */
 fun DependencyHandlerScope.exposedPluginLib(exposedVersion: String, modules: List<String> = listOf("dao", "jdbc", "java-time")) {
     val exposedPrefix = "org.jetbrains.exposed:exposed"
 
@@ -46,10 +46,10 @@ fun DependencyHandlerScope.exposedPluginLib(exposedVersion: String, modules: Lis
 }
 
 @Suppress("unused")
-        /**
-         * Adds simple cloud as implemetation to the project
-         * @param modules What modules / artifacts of simplecloud should be used (Without api & plugin)
-         */
+/**
+ * Adds simple cloud as implemetation to the project
+ * @param modules What modules / artifacts of simplecloud should be used (Without api & plugin)
+ */
 fun DependencyHandlerScope.simpleCloudPluginLib(simpleCloudVersion: String, modules: List<String> = emptyList()) {
     usingSimpleCloud = true
     val simpleCloudPrefix = "eu.thesimplecloud.simplecloud:simplecloud"
@@ -62,10 +62,10 @@ fun DependencyHandlerScope.simpleCloudPluginLib(simpleCloudVersion: String, modu
 }
 
 @Suppress("unused")
-        /**
-         * Adds advanced slime world manager as implementation to the project
-         * @param modules What modules / artifacts of aswm should be used (Without api)
-         */
+/**
+ * Adds advanced slime world manager as implementation to the project
+ * @param modules What modules / artifacts of aswm should be used (Without api)
+ */
 fun DependencyHandlerScope.aswmPluginLib(modules: List<String> = emptyList()) {
     val aswmGroup = "com.infernalsuite.aswm"
     val slimeVersion = extensions.getByType(PaperKotlinExtension::class.java).slimeVersion
