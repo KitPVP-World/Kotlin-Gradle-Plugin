@@ -1,7 +1,7 @@
 package world.kitpvp
 
 /**
- * idk why this file needs to be here but if it's not the build will miss accessors of the following plugins and fail the build.
+ * idk why this file needs to be here but if it isn't the build will miss accessors of the following plugins and fail the build.
  */
 plugins {
     kotlin("jvm")
