@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "world.kitpvp"
-version = "1.0.0"
+version = "1.1.0-SNAPSHOT"
 description = "Makes development with advanced slime paper, kspigot, paperweight userdev easier"
 
 val kotlin = "1.8.10"
@@ -15,11 +15,11 @@ val kotlin = "1.8.10"
 repositories {
     mavenCentral()
     gradlePluginPortal()
+    maven("https://maven.fabricmc.net/")
 }
 
 dependencies {
     implementation(gradleApi())
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 }
 
 
@@ -48,22 +48,29 @@ dependencies {
     compileOnly(pluginDep("io.papermc.paperweight.userdev", "1.5.5"))
     compileOnly(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
     compileOnly(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
+    compileOnly(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
 
     runtimeOnly(pluginDep("io.papermc.paperweight.userdev", "1.5.5"))
     runtimeOnly(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
     runtimeOnly(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
+    runtimeOnly(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
 }
 
 
 gradlePlugin {
     plugins {
-        all {
-            id = "world.kitpvp.paper-kotlin-plugin"
+        create("paperKotlinProject") {
+            id = "world.kitpvp.paper-kotlin-project"
+            implementationClass = "world.kitpvp.PaperKotlinProject"
             displayName = "Paper Kotlin Plugin"
             //description = "Makes development with advanced slime paper, kspigot, paperweight userdev easier"
             description = project.description
             tags.set(listOf("minecraft", "paper", "kotlin", "kspigot", "aswm"))
-            implementationClass = "world.kitpvp.PaperKotlinPlugin"
+        }
+
+        // I think I don't need to say anything about this
+        removeIf {
+            it.name.endsWith("dummy")
         }
     }
 

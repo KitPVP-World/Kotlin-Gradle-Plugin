@@ -5,11 +5,6 @@ package world.kitpvp
  */
 open class PaperKotlinExtension {
     /**
-     * Latest version available at [KSpigot#releases](https://github.com/jakobkmar/KSpigot/releases/latest)
-     */
-    var kspigotVersion: String = "1.19.2"
-
-    /**
      * Minecraft version
      */
     var minecraftVersion: String = "1.19.4"
@@ -17,7 +12,7 @@ open class PaperKotlinExtension {
     /**
      * plugin.yml api version
      */
-    var apiVersion: String = if(minecraftVersion.count { it == '.' } == 1) minecraftVersion else minecraftVersion.substringBeforeLast('.')
+    var apiVersion: String = if(minecraftVersion.count { it == '.' } == 1) minecraftVersion else minecraftVersion.substringBeforeLast('.') // Checks if version is e.g. 1.19.4 not 1.19 then removes last digit
 
     /**
      * Latest build available at [AdvancedSlimePaper#releases](https://github.com/InfernalSuite/AdvancedSlimePaper#releases)
