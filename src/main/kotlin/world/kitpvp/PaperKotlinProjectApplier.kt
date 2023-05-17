@@ -1,23 +1,20 @@
 package world.kitpvp
 
 import dev.s7a.gradle.minecraft.server.tasks.LaunchMinecraftServerTask
-import gradle.kotlin.dsl.accessors._46d043dc7409397208137acfa1647ba6.*
-import gradle.kotlin.dsl.accessors._46d043dc7409397208137acfa1647ba6.paperweight
+import gradle.kotlin.dsl.accessors._1622db761ce1e4742dacab1462fe07fd.*
+import gradle.kotlin.dsl.accessors._1622db761ce1e4742dacab1462fe07fd.paperweight
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import world.kitpvp.extensions.pluginLibraries
-import world.kitpvp.extensions.pluginLibraryImplementation
-import world.kitpvp.extensions.usingSimpleCloud
+import world.kitpvp.extensions.pluginLibraryHandlerScope
 import world.kitpvp.utils.ASWM
 import java.io.FileOutputStream
 
-val applyToProject: (Project.(
-    extension: PaperKotlinExtension, pluginYml: Boolean, runTasks: Boolean, paperShelled: Boolean) -> Unit) = {
-    extension: PaperKotlinExtension, pluginYml: Boolean, runTasks: Boolean, paperShelled: Boolean ->
+fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, pluginYml: Boolean, runTasks: Boolean) {
+    val pluginLibraryHandlerScope = project.pluginLibraryHandlerScope
 
     /**
      * Configure Plugins
@@ -27,7 +24,7 @@ val applyToProject: (Project.(
     if(pluginYml) {
         bukkit {
             apiVersion = extension.apiVersion
-            libraries = pluginLibraries
+            libraries = pluginLibraryHandlerScope.pluginLibraries
             load = BukkitPluginDescription.PluginLoadOrder.STARTUP
             main = "$group.${project.name.lowercase()}.${project.name}"
             description = project.description
@@ -36,16 +33,19 @@ val applyToProject: (Project.(
 
     }
     // Configure mixin support
-    /*if(paperShelled) {
-        paperShelled {
-            archiveClassifier = "Hallo"
-            jarUrl = ""
-        }
-    }*/
+    if(pluginLibraryHandlerScope.usingPaperShelled) {
+        println("Using paper shelled")
 
-    // Kotlin / Java Optimizations
-    kotlin {
-        jvmToolchain(17)
+        paperShelled {
+            archiveClassifier.set("mixins")
+            jarUrl.set("")
+        }
+
+        buildscript {
+            repositories {
+                maven("https://maven.fabricmc.net/")
+            }
+        }
     }
 
     /**
@@ -53,18 +53,24 @@ val applyToProject: (Project.(
      */
     repositories {
         mavenCentral()
-        maven("https://repo.thesimplecloud.eu/artifactory/list/gradle-release-local")
-        maven("https://repo.papermc.io/repository/maven-public/")
-        maven("https://repo.infernalsuite.com/repository/maven-snapshots/")
-        maven("https://maven.fabricmc.net/")
+
+        if(paper)
+            maven("https://repo.papermc.io/repository/maven-public/")
+
+        if(pluginLibraryHandlerScope.usingSimpleCloud)
+            maven("https://repo.thesimplecloud.eu/artifactory/list/gradle-release-local")
+
+        if(pluginLibraryHandlerScope.usingASWM)
+            maven("https://repo.infernalsuite.com/repository/maven-snapshots/")
     }
 
-    dependencies {
-        val kspigot = extension.kspigotVersion
-        val minecraft = extension.minecraftVersion
 
-        paperweight.paperDevBundle("$minecraft-R0.1-SNAPSHOT")
-        pluginLibraryImplementation("net.axay:kspigot:$kspigot")
+    dependencies {
+        if(paper) {
+            val minecraft = extension.minecraftVersion
+
+            paperweight.paperDevBundle("$minecraft-R0.1-SNAPSHOT")
+        }
     }
 
     /**
@@ -76,20 +82,6 @@ val applyToProject: (Project.(
             dependsOn(reobfJar)
         }
 
-        compileJava {
-            options.encoding = Charsets.UTF_8.name() // We want UTF-8 for everything
-
-            // Set the release flag. This configures what version bytecode the compiler will emit, as well as what JDK APIs are usable.
-            // See https://openjdk.java.net/jeps/247 for more information.
-            options.release.set(17)
-        }
-        javadoc {
-            options.encoding = Charsets.UTF_8.name() // We want UTF-8 for everything
-        }
-        processResources {
-            filteringCharset = Charsets.UTF_8.name() // We want UTF-8 for everything
-        }
-
         if(runTasks) {
             // Minecraft Server
             task<LaunchMinecraftServerTask>("runServer") {
@@ -99,12 +91,11 @@ val applyToProject: (Project.(
                 val slimeBuild by lazy { extension.slimeBuild }
                 var ready = true
 
-                // dependsOn("shadowJar")
                 doFirst {
                     if(!ready) {
                         throw GradleException("No slime specified! Server won't start.")
                     }
-                    if(usingSimpleCloud)
+                    if(pluginLibraryHandlerScope.usingSimpleCloud)
                         logger.warn("Simple Cloud implementation detected! This plugin may not work on a normal server")
 
                     val slimeJarFileOutputDir = buildDir.resolve("MinecraftServer/plugins/")

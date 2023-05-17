@@ -5,11 +5,6 @@ package world.kitpvp
  */
 open class PaperKotlinExtension {
     /**
-     * Latest version available at [KSpigot#releases](https://github.com/jakobkmar/KSpigot/releases/latest)
-     */
-    var kspigotVersion: String = "1.19.2"
-
-    /**
      * Minecraft version
      */
     var minecraftVersion: String = "1.19.4"
