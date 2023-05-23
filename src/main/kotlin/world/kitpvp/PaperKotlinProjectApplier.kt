@@ -10,6 +10,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import world.kitpvp.extensions.pluginLibraryHandlerScope
+import world.kitpvp.libraries.paper.PaperUrlBuilder
 import world.kitpvp.utils.ASWM
 import java.io.FileOutputStream
 
@@ -38,15 +39,16 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
 
         paperShelled {
             archiveClassifier.set("mixins")
-            jarUrl.set("")
+            jarUrl.set(PaperUrlBuilder.getPaperServerUrl(logger, extension.minecraftVersion))
+            reobfAfterJarTask.set(false) // Paperweight should already re-obfuscate it
+        }
+        apply {
+            plugin("cn.apisium.papershelled") // Mixin support for paper
         }
 
-        buildscript {
-            repositories {
-                maven("https://maven.fabricmc.net/")
-            }
-        }
     }
+
+
 
     /**
      * Dependencies
@@ -71,6 +73,9 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
 
             paperweight.paperDevBundle("$minecraft-R0.1-SNAPSHOT")
         }
+        for(dependencyNotation in pluginLibraryHandlerScope.libraryImplementations) {
+            implementation(dependencyNotation)
+        }
     }
 
     /**
@@ -83,8 +88,11 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
         }
 
         if(runTasks) {
+            val GROUP = "paper-kotlin"
             // Minecraft Server
             task<LaunchMinecraftServerTask>("runServer") {
+                description = "Runs a slime paper server with the plugin"
+                group = GROUP
                 dependsOn("reloadPlugin")
 
                 val slimeVersion by lazy { extension.slimeVersion }
@@ -121,6 +129,8 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
 
             }
             create("reloadPlugin") {
+                group = GROUP
+                description = "Builds the plugin and puts it into build/MinecraftServer/plugins"
                 dependsOn("build")
                 doLast {
                     copy {

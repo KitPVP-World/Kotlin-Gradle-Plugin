@@ -23,11 +23,11 @@ class PaperKotlinProject: Plugin<Project> {
         val pluginYml: Boolean by target.extra(true)
         val runTasks: Boolean by target.extra(true)
         val paper: Boolean by target.extra(true)
-        val mixins: Boolean by target.extra(false)
 
         /**
          * Apply plugins
          */
+        // TODO: Do I even need to do this?
         target.apply {
             plugin("org.jetbrains.kotlin.jvm")
             plugin("org.gradle.java-library")
@@ -39,9 +39,7 @@ class PaperKotlinProject: Plugin<Project> {
             if(runTasks) {
                 plugin("dev.s7a.gradle.minecraft.server") // Generates run tasks
             }
-            if(mixins) {
-                plugin("cn.apisium.papershelled") // Mixin support for paper
-            }
+
         }
 
         target.applyToProject(extension, paper, pluginYml, runTasks)

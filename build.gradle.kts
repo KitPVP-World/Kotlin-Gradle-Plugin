@@ -4,6 +4,7 @@ plugins {
     `maven-publish`
     kotlin("jvm") version "1.8.10"
     id("com.gradle.plugin-publish") version "1.1.0"
+    kotlin("plugin.serialization") version "1.8.10"
 }
 
 group = "world.kitpvp"
@@ -18,11 +19,6 @@ repositories {
     maven("https://maven.fabricmc.net/")
 }
 
-dependencies {
-    implementation(gradleApi())
-}
-
-
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
         jvmTarget = "17"
@@ -31,7 +27,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     }
 }
 
-
 dependencies {
     fun pluginDep(id: String, version: String) = "${id}:${id}.gradle.plugin:${version}"
     fun pluginDep(prov: Provider<PluginDependency>): String {
@@ -39,21 +34,14 @@ dependencies {
         return pluginDep(pluginDep.pluginId, pluginDep.version.displayName)
     }
 
-    compileOnly(kotlin("gradle-plugin", kotlin))
-    runtimeOnly(kotlin("gradle-plugin", kotlin))
-
-    compileOnly(pluginDep("org.gradle.toolchains.foojay-resolver-convention", "0.5.0"))
-    runtimeOnly(pluginDep("org.gradle.toolchains.foojay-resolver-convention", "0.5.0"))
-
-    compileOnly(pluginDep("io.papermc.paperweight.userdev", "1.5.5"))
-    compileOnly(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
-    compileOnly(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
-    compileOnly(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
-
-    runtimeOnly(pluginDep("io.papermc.paperweight.userdev", "1.5.5"))
-    runtimeOnly(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
-    runtimeOnly(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
-    runtimeOnly(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
+    implementation(kotlin("gradle-plugin", kotlin)) // Kotlin
+    implementation(pluginDep("org.gradle.toolchains.foojay-resolver-convention", "0.5.0")) // Resolving Paperweight
+    implementation(pluginDep("io.papermc.paperweight.userdev", "1.5.5")) // Paper + NMS
+    implementation(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
+    implementation(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
+    implementation(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+    implementation(gradleApi())
 }
 
 
@@ -75,8 +63,9 @@ gradlePlugin {
     }
 
 
-    website.set("https://kitpvp.world")
     vcsUrl.set("https://github.com/KitPVP-World/Paper-Kotlin-Plugin")
+    website.set(vcsUrl.get())
+
 }
 
 publishing {
