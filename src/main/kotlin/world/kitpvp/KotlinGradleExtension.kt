@@ -3,7 +3,7 @@ package world.kitpvp
 /**
  * Config for paper kotlin plugin
  */
-open class PaperKotlinExtension {
+open class KotlinGradleExtension {
     /**
      * Minecraft version
      */

@@ -1,11 +1,13 @@
 package world.kitpvp
 
+import cn.apisium.papershelled.gradle.Extension
 import dev.s7a.gradle.minecraft.server.tasks.LaunchMinecraftServerTask
-import gradle.kotlin.dsl.accessors._1622db761ce1e4742dacab1462fe07fd.*
-import gradle.kotlin.dsl.accessors._1622db761ce1e4742dacab1462fe07fd.paperweight
+import io.papermc.paperweight.tasks.RemapJar
+import io.papermc.paperweight.userdev.PaperweightUserDependenciesExtension
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -14,7 +16,7 @@ import world.kitpvp.libraries.paper.PaperUrlBuilder
 import world.kitpvp.utils.ASWM
 import java.io.FileOutputStream
 
-fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, pluginYml: Boolean, runTasks: Boolean) {
+fun Project.applyToProject(extension: KotlinGradleExtension) {
     val pluginLibraryHandlerScope = project.pluginLibraryHandlerScope
 
     /**
@@ -22,8 +24,10 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
      */
 
     // Configure plugin.yml defaults
-    if(pluginYml) {
-        bukkit {
+    if(pluginLibraryHandlerScope.createPluginYml) {
+        plugins.apply("net.minecrell.plugin-yml.bukkit") // Generates plugin.yml
+
+        extensions.getByType(BukkitPluginDescription::class).apply {
             apiVersion = extension.apiVersion
             libraries = pluginLibraryHandlerScope.pluginLibraries
             load = BukkitPluginDescription.PluginLoadOrder.STARTUP
@@ -31,24 +35,27 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
             description = project.description
             version = project.version.toString()
         }
-
     }
+
+    // Apply run tasks plugin
+    if(pluginLibraryHandlerScope.generateRunTasks) {
+        plugins.apply("dev.s7a.gradle.minecraft.server") // Generates run tasks
+    }
+
     // Configure mixin support
     if(pluginLibraryHandlerScope.usingPaperShelled) {
         println("Using paper shelled")
 
-        paperShelled {
-            archiveClassifier.set("mixins")
-            jarUrl.set(PaperUrlBuilder.getPaperServerUrl(logger, extension.minecraftVersion))
-            reobfAfterJarTask.set(false) // Paperweight should already re-obfuscate it
-        }
         apply {
             plugin("cn.apisium.papershelled") // Mixin support for paper
         }
 
+        extensions.getByType(Extension::class).apply {
+            archiveClassifier.set("mixins")
+            jarUrl.set(PaperUrlBuilder.getPaperServerUrl(logger, extension.minecraftVersion))
+            reobfAfterJarTask.set(false) // Paperweight should already re-obfuscate it
+        }
     }
-
-
 
     /**
      * Dependencies
@@ -56,7 +63,7 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
     repositories {
         mavenCentral()
 
-        if(paper)
+        if(pluginLibraryHandlerScope.usingPaper)
             maven("https://repo.papermc.io/repository/maven-public/")
 
         if(pluginLibraryHandlerScope.usingSimpleCloud)
@@ -68,13 +75,22 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
 
 
     dependencies {
-        if(paper) {
+        if(pluginLibraryHandlerScope.usingPaperServer) {
             val minecraft = extension.minecraftVersion
-
-            paperweight.paperDevBundle("$minecraft-R0.1-SNAPSHOT")
+            extensions.getByType(PaperweightUserDependenciesExtension::class)
+                .paperDevBundle("$minecraft-R0.1-SNAPSHOT")
         }
         for(dependencyNotation in pluginLibraryHandlerScope.libraryImplementations) {
-            implementation(dependencyNotation)
+            val splittedNotation = dependencyNotation.split(":")
+
+            val dep = dependencies.create(splittedNotation[0],  splittedNotation[1], splittedNotation[2], null, splittedNotation[3], null)
+            dependencies.add("implementation", dep)
+        }
+        for(dependencyNotation in pluginLibraryHandlerScope.libraryCompileOnlies) {
+            val splittedNotation = dependencyNotation.split(":")
+
+            val dep = dependencies.create(splittedNotation[0],  splittedNotation[1], splittedNotation[2], null, splittedNotation[3], null)
+            dependencies.add("compileOnly", dep)
         }
     }
 
@@ -82,17 +98,19 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
      * Task Configurations
      */
     tasks {
-        // Configure reobfJar to run when invoking the build task
-        assemble {
-            dependsOn(reobfJar)
-        }
+        if(pluginLibraryHandlerScope.usingPaper)
+            this.getByName("assemble").dependsOn(named<RemapJar>("reobfJar"))
 
-        if(runTasks) {
-            val GROUP = "paper-kotlin"
-            // Minecraft Server
+        /*assemble {
+            dependsOn(reobfJar)
+        }*/
+        
+
+        if(pluginLibraryHandlerScope.generateRunTasks) {
+            val taskGroup = "paper-kotlin"
             task<LaunchMinecraftServerTask>("runServer") {
                 description = "Runs a slime paper server with the plugin"
-                group = GROUP
+                group = taskGroup
                 dependsOn("reloadPlugin")
 
                 val slimeVersion by lazy { extension.slimeVersion }
@@ -129,7 +147,7 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
 
             }
             create("reloadPlugin") {
-                group = GROUP
+                group = taskGroup
                 description = "Builds the plugin and puts it into build/MinecraftServer/plugins"
                 dependsOn("build")
                 doLast {
@@ -149,7 +167,7 @@ fun Project.applyToProject(extension: PaperKotlinExtension, paper: Boolean, plug
         }
     }
 
-    java {
+    extensions.getByType(JavaPluginExtension::class).apply {
         // Configure the java toolchain. This allows gradle to auto-provision JDK 17 on systems that only have JDK 8 installed for example.
         toolchain.languageVersion.set(JavaLanguageVersion.of(17))
     }
