@@ -3,7 +3,6 @@ plugins {
     `kotlin-dsl`
     `maven-publish`
     kotlin("jvm") version "1.8.10"
-    id("com.gradle.plugin-publish") version "1.1.0"
     kotlin("plugin.serialization") version "1.8.10"
 }
 
@@ -19,14 +18,6 @@ repositories {
     maven("https://maven.fabricmc.net/")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "17"
-        // languageVersion: A.B of the kotlin plugin version A.B.C
-        languageVersion = kotlin.substringBeforeLast('.')
-    }
-}
-
 dependencies {
     fun pluginDep(id: String, version: String) = "${id}:${id}.gradle.plugin:${version}"
     fun pluginDep(prov: Provider<PluginDependency>): String {
@@ -36,10 +27,10 @@ dependencies {
 
     implementation(kotlin("gradle-plugin", kotlin)) // Kotlin
     implementation(pluginDep("org.gradle.toolchains.foojay-resolver-convention", "0.5.0")) // Resolving Paperweight
-    implementation(pluginDep("io.papermc.paperweight.userdev", "1.5.5")) // Paper + NMS
-    implementation(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
-    implementation(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
-    implementation(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
+    compileOnly(pluginDep("io.papermc.paperweight.userdev", "1.5.5")) // Paper + NMS
+    compileOnly(pluginDep("dev.s7a.gradle.minecraft.server", "2.1.0")) // always choose the latest version from the link above
+    compileOnly(pluginDep("net.minecrell.plugin-yml.bukkit", "0.5.3")) // Generates plugin.yml
+    compileOnly(pluginDep("cn.apisium.papershelled",  "1.2.1")) // Enable mixin support
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
     implementation(gradleApi())
 }
@@ -65,7 +56,6 @@ gradlePlugin {
 
     vcsUrl.set("https://github.com/KitPVP-World/Paper-Kotlin-Plugin")
     website.set(vcsUrl.get())
-
 }
 
 publishing {
@@ -74,12 +64,32 @@ publishing {
             name = "localPluginRepository"
             url = uri("../local-plugin-repository")
         }
+        maven {
+            name = ""
+        }
     }
 }
+
+
+
+
 
 
 java {
     withSourcesJar()
     withJavadocJar()
+
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "17"
+        // languageVersion: A.B of the kotlin plugin version A.B.C
+        languageVersion = kotlin.substringBeforeLast('.')
+    }
 }
 

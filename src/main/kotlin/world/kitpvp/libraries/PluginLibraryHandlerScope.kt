@@ -1,7 +1,7 @@
 package world.kitpvp.libraries
 
 import org.gradle.api.Project
-import world.kitpvp.PaperKotlinExtension
+import world.kitpvp.KotlinGradleExtension
 
 val pluginLibraryHandlerScopes = mutableMapOf<Project, PluginLibraryHandlerScope>()
 
@@ -9,7 +9,7 @@ val pluginLibraryHandlerScopes = mutableMapOf<Project, PluginLibraryHandlerScope
  * Scope for adding plugin libraries
  */
 class PluginLibraryHandlerScope(
-    val extension: PaperKotlinExtension
+    val extension: KotlinGradleExtension
 ) {
 
     /**
@@ -22,9 +22,18 @@ class PluginLibraryHandlerScope(
      */
     val libraryImplementations = mutableListOf<String>()
 
+    /**
+     * All plugin compileOnlies
+     */
+    val libraryCompileOnlies = mutableListOf<String>()
+
     var usingSimpleCloud = false
     var usingASWM = false
     var usingPaperShelled = false
+    var usingPaperServer = false
+    var createPluginYml = false
+    var generateRunTasks = false
+    var usingPaper = false
 
 
     /**
@@ -38,6 +47,16 @@ class PluginLibraryHandlerScope(
     }
 
     /**
+     * Adds a dependency using compileOnly and adds it to the plugin's libraries
+     * @param dependencyNotation the dependency notation e.g. world.kitpvp:core-api:1.0.0
+     */
+    @Suppress("unused")
+    fun pluginLibraryCompileOnly(dependencyNotation: String) {
+        pluginLibrary(dependencyNotation)
+        libraryCompileOnly(dependencyNotation)
+    }
+
+    /**
      * Simple implementation method from gradle (Specifically used for in library stuff)
      */
     @Suppress("unused")
@@ -45,6 +64,13 @@ class PluginLibraryHandlerScope(
         libraryImplementations += dependencyNotation
     }
 
+    /**
+     * Simple compileOnly method from gradle (Specifically used for in library stuff)
+     */
+    @Suppress("unused")
+    fun libraryCompileOnly(dependencyNotation: String) {
+        libraryCompileOnlies += dependencyNotation
+    }
     /**
      * Simply adds a library to the plugin's libraries
      * @param dependencyNotation the dependency notation e.g. world.kitpvp:core-api:1.0.0
@@ -55,7 +81,7 @@ class PluginLibraryHandlerScope(
     }
 
     /**
-     * Adds kotlin reflect as plugin library implementation to the project
+     * Adds a kotlin module as plugin library implementation to the project
      */
     @Suppress("unused")
     fun kotlinPluginLibrary(module: String) {
@@ -75,6 +101,26 @@ class PluginLibraryHandlerScope(
         for (module in modules) {
             pluginLibraryImplementation("$exposedPrefix-$module:$exposedVersion")
         }
+    }
+
+    /**
+     * Adds paper to the project
+     * @param paperServer If true it will apply the paperweight userdev plugin to the project and adds the paper dependency else it will apply the paper api for lightweight development
+     * @param pluginYml Automatically generate plugin.yml
+     * @param runTasks Generate run task: runServer
+     */
+    @Suppress("unused")
+    fun paper(paperServer: Boolean = true, pluginYml: Boolean = true, runTasks: Boolean) {
+        usingPaper = true
+
+        if(paperServer) {
+            usingPaperServer = true
+        } else
+            libraryCompileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
+
+        if(pluginYml) createPluginYml = true
+        if(runTasks) generateRunTasks = true
+
     }
 
     /**
